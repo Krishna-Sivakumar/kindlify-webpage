@@ -1,0 +1,129 @@
+@font-face {
+    font-family: "Roboto Mono";
+    src: url("/fonts/RobotoMono-VariableFont_wght.ttf");
+}
+
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9e8;
+    color: #1e3a8a;
+    font-family: "Roboto Mono";
+    text-shadow: 0 0 2px #80808051;
+}
+
+#main {
+    margin-top: 10vh;
+    margin-left: auto;
+    margin-right: auto;
+    width: 80vw;
+}
+
+@media (min-width: 768px) {
+#main {
+margin-top: 10vh;
+margin-left: auto;
+margin-right: auto;
+width: 60vw;
+}
+}
+
+#nav {
+border-bottom: 2px dotted #1e3a8a;
+    padding: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3em;
+}
+
+.search-list {
+display: flex;
+flex-direction: column;
+}
+
+.search-item {
+display: flex;
+gap: 0;
+flex-direction: column;
+}
+
+.search-item > * {
+margin: 0;
+}
+
+pre {
+background: rgba(0,0,0,0.05);
+width: 100%;
+padding: 1em;
+border-radius: 5px;
+text-wrap: auto;
+}
+
+h1 {
+    font-weight: 800;
+    font-size: 48px;
+}
+
+button {
+	font-family: 'Roboto Mono';
+	background: #1e3a8a;
+	border: 1px solid #1e3a8a;
+	color: white;
+	padding: 0.5rem 0.5rem;
+	border-radius: 0.25rem;
+	width: 10rem;
+}
+
+button:disabled {
+	background: gray;
+	border: 1px solid gray;
+}
+
+input[type="text"] {
+	font-family: 'Roboto Mono';
+	border: 1px solid grey;
+	background: rgba(28, 25, 17, 0.5);
+	color: white;
+	box-shadow: 0 0 3px gray;
+	padding: 0.5rem 0.5rem;
+	border-radius: 0.25rem;
+	width: 25%;
+}
+
+input[type="text"]::placeholder {
+	color: white;
+}
+
+p {
+    font-size: 16px;
+}
+
+hr {
+    border-top: solid 2px;
+	margin: 2rem 0;
+	width: 100%;
+}
+
+a {
+    color: #930072;
+    font-weight: 700;
+    text-decoration: underline dotted;
+}
+
+#preview-box {
+	background-color: white;
+	color: black;
+	padding: 2rem;
+	font-family: serif;
+}
+
+#preview-box a {
+	color: black;
+	text-decoration: underline;
+}
+
+#preview-box img {
+	filter: grayscale(1);
+}

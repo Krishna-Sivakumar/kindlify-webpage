@@ -3,30 +3,148 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
+		<title>Send Webpage to Kindle</title>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/readability/0.6.0/Readability.js" integrity="sha512-cY9LjZzucgo2OKzTs/0J5LrG2IqeDv2CB+0JQ6O9B+J6Mu+fKZ4qI5/NxnGQq6AGx2mtsJhWLuAfBsV7gPnoZA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js" integrity="sha512-YlctBG9PGZIhh9keoqI3eZkQM9T8QUbiBi7qNYAO/TUEo8jqWX5pLp5+x1cKRQDRzJ/lyGyJ9WUVNIRduxIIFw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script src="auth.js"></script>
+		<link rel="stylesheet" href="/main.css"/>
+		<link rel="icon" href="/icon.svg"/>
 	</head>
 	<body>
-		<h1 id="heading"></h1>
-		<p>This page comes from a static asset stored at `public/index.html` as configured in `wrangler.jsonc`.</p>
-		<button id="button" type="button">Fetch a random UUID</button>
-		<output id="random" for="button"></output>
-		<script>
-			fetch('/message')
-				.then((resp) => resp.text())
-				.then((text) => {
-					const h1 = document.getElementById('heading');
-					h1.textContent = text;
-				});
+		<div id="main">
+			<h1>Send Webpage to Kindle</h1>
+			<p>Take a url, convert it into a readable document, and send it to your kindle mail through your gmail.</p>
+			<ol>
+			<li>Audit the code here: (<a target="_blank" href="https://github.com/Krishna-Sivakumar/kindlify-url">src/index.js</a> for the email stuff)</li>
+			<li>Use the URL Preview below to check out what your document would look like on the kindle.</li>
+			<li>Make sure your gmail is added to your <a href="https://www.amazon.com/sendtokindle/email">kindle's approved list.</a></li>
+			</ol>
+			<button type="button" id="login" style="display:none">Login with Google</button>
+			<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+				<input id="data-url" type="text" id="url" placeholder="url" />
+				<button id="preview" type="button">Preview</button>
+			</div>
+			<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+				<input id="data-kindle-mail" type="text" id="target-mail" placeholder="kindle email: name@kindle.com" />
+				<button id="send" type="button">Send to Kindle</button>
+			</div>
+			<input type="text" id="opt-title" placeholder="Document Name" style="margin-top: 0.25rem;" />
+			<hr/>
+			<h2>Preview</h2>
+			<div id="preview-box">
+				<p>Nothing as of now.</p>
+			</div>
 
-			const button = document.getElementById("button");
-			button.addEventListener("click", () => {
-				fetch('/random')
-					.then((resp) => resp.text())
-					.then((text) => {
-						const random = document.getElementById('random');
-						random.textContent = text;
-					});
-			});
-		</script>
+			<script>
+				let cachedUrl = '';
+				const emailbox = document.querySelector("#data-kindle-mail");
+				const send = document.querySelector("#send");
+				const preview = document.querySelector("#preview");
+				const login = document.querySelector("#login");
+				let parsed = null;
+
+				function getUrl() {
+					return document.querySelector('#data-url').value;
+				}
+
+				function isRelativeURI(url) {
+					var pat = /^https?:\/\//i;
+					return pat.test(urlString)
+				}
+
+				window.onload = () => {
+					const storedMail = window.localStorage.getItem('stored-mail') || ""
+					if (storedMail != "") {
+						emailbox.value = storedMail
+					}
+
+					fetch('/loginstatus')
+						.then(response => response.text())
+						.then(text => {
+							if (text != 'ok') {
+								login.style = "display: block";
+							}
+						})
+						.catch(err => console.log(err))
+
+				}
+
+				async function parseUrl(fetchUrl) {
+					if (fetchUrl != cachedUrl) {
+						const response = await fetch('/url?' + new URLSearchParams({url: fetchUrl}).toString())
+						const cleanedResponse = DOMPurify.sanitize(await response.text())
+						const doc = new DOMParser().parseFromString(cleanedResponse, 'text/html')
+						const parsedDoc = new Readability(doc).parse()
+
+						console.log(doc, parsedDoc)
+						parsedDoc.content = parsedDoc.content.replaceAll(window.location.href, new URL(fetchUrl).origin + '/')
+						parsed = parsedDoc
+
+						if (parsed.title == "") {
+							parsed.title = document.querySelector("#opt-title").value;
+							if (parsed.title == "") { // still empty
+								alert("Could not infer a title from the webpage. Set the document's name in the textbox above.")
+							}
+						} else {
+							document.querySelector("#opt-title").value = parsed.title;
+						}
+						cachedUrl = fetchUrl;
+						console.log(parsed);
+					}
+				}
+
+				emailbox.addEventListener('change', (event) => {
+					window.localStorage.setItem('stored-mail', event.target.value)
+				})
+
+				login.addEventListener('click', async () => {
+					oauth2SignIn();
+				})
+
+				preview.addEventListener('click', async () => {
+					await parseUrl(getUrl());
+					document.querySelector("#preview-box").setHTMLUnsafe(parsed.content)
+				})
+
+				const sendMonitor = (handler) => {
+					return async () => {
+						send.disabled = true;
+						await handler()
+						send.disabled = false;
+					}
+				}
+
+				send.addEventListener("click", sendMonitor(async () => {
+					await parseUrl(getUrl())
+					document.querySelector("#preview-box").setHTMLUnsafe(parsed.content)
+					const mailaddr = document.querySelector('#data-kindle-mail').value
+					const filename = document.querySelector("#opt-title").value;
+					if (filename == "") {
+						alert("Could not infer a title from the webpage. Set the document's name in the textbox above.")
+						return
+					}
+					if (mailaddr == "") {
+						alert("Need a kindle mail address to send to.")
+						return
+					}
+					const response = await fetch('/upload', {
+						method: "POST",
+						body: JSON.stringify({
+							kindle_email: document.querySelector('#data-kindle-mail').value,
+							filename: document.querySelector('#opt-title').value,
+							content: parsed.content,
+						})
+					})
+					const responseText = await response.text()
+
+					if (responseText == 'ok') {
+						alert('Mail sent!');
+					} else {
+						alert(responseText)
+					}
+				}));
+
+			</script>
+		</div>
 	</body>
 </html>

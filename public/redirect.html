@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Send Webpage to Kindle - Redirect</title>
+		<link rel="stylesheet" href="/main.css"/>
+		<link rel="icon" href="/icon.svg"/>
+	</head>
+	<body>
+		<div id="main">
+			<p> Redirecting...</p>
+			<script>
+				window.onload = async () => {
+					const fragmentString = location.hash.substring(1);
+					let params = {};
+					let m;
+					const regex = /([^&=]+)=([^&]*)/g;
+					while (m = regex.exec(fragmentString)) {
+						params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+					}
+					params['iat'] = Math.floor(Date.now() / 1000);
+					params['expires_in'] = parseInt(params['expires_in'])
+
+					if (Object.keys(params).length > 0 && params['state']) {
+						if (params['state'] == window.localStorage.getItem('state')) {
+							await fetch ('/setcookie', {method: 'POST', body: JSON.stringify(params)})
+						} else {
+							console.log('State mismatch. Possible CSRF attack');
+						}
+					}
+
+					setTimeout(() => {
+						window.location.href='/';
+					}, 0)
+				}
+			</script>
+		</div>
+	</body>
+</html>
