@@ -165,6 +165,8 @@
 					}
 
 					await parseUrl(getUrl());
+					window.location.hash = '';
+					window.location.hash = 'preview-box';
 				})
 
 				const sendMonitor = (handler) => {
