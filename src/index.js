@@ -11,7 +11,7 @@ import JSZip from "jszip"
  */
 async function sendMail(request, env) {
 	const getAsset = (url, request, env) => {
-		return env.assets.fetch(new URL(request.url).origin + '/' + url)
+		return env.ASSETS.fetch(new URL(request.url).origin + '/' + url)
 				.then(response => response.text())
 	}
 
