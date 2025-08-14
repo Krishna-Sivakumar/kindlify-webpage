@@ -1,0 +1,21 @@
+Content-Type: multipart/mixed; boundary=foo_bar_baz
+MIME-Version: 1.0
+To: {{kindle_email}}
+subject: Kindle Document: {{filename}}
+
+--foo_bar_baz
+Content-Type: text/html; charset="UTF-8"
+MIME-Version: 1.0
+
+<p>Document Attached Below.</p>
+
+--foo_bar_baz
+Content-Type: application/epub+zip
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="{{{filename}}}.epub"
+
+{{{zipContent}}}
+
+--foo_bar_baz
+

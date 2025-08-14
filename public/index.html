@@ -1,4 +1,3 @@
-<!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
@@ -8,6 +7,7 @@
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js" integrity="sha512-YlctBG9PGZIhh9keoqI3eZkQM9T8QUbiBi7qNYAO/TUEo8jqWX5pLp5+x1cKRQDRzJ/lyGyJ9WUVNIRduxIIFw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 		<script src="auth.js"></script>
 		<link rel="stylesheet" href="/main.css"/>
+		<link rel="stylesheet" href="/preview.css"/>
 		<link rel="icon" href="/icon.svg"/>
 	</head>
 	<body>
@@ -22,13 +22,13 @@
 			<button type="button" id="login" style="display:none">Login with Google</button>
 			<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
 				<input id="data-url" type="text" id="url" placeholder="url" />
-				<button id="preview" type="button">Preview</button>
+				<button id="preview" type="button"><img src="preview.svg">Preview</button>
 			</div>
 			<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
 				<input id="data-kindle-mail" type="text" id="target-mail" placeholder="kindle email: name@kindle.com" />
-				<button id="send" type="button">Send to Kindle</button>
 			</div>
 			<input type="text" id="opt-title" placeholder="Document Name" style="margin-top: 0.25rem;" />
+			<button id="send" type="button" style="margin: 0.25rem 0;"><img src="send.svg">Send to Kindle</button>
 			<hr/>
 			<h2>Preview</h2>
 			<div id="preview-box">
@@ -36,12 +36,10 @@
 			</div>
 
 			<script>
-				let cachedUrl = '';
 				const emailbox = document.querySelector("#data-kindle-mail");
 				const send = document.querySelector("#send");
 				const preview = document.querySelector("#preview");
 				const login = document.querySelector("#login");
-				let parsed = null;
 
 				function getUrl() {
 					return document.querySelector('#data-url').value;
@@ -70,27 +68,81 @@
 				}
 
 				async function parseUrl(fetchUrl) {
-					if (fetchUrl != cachedUrl) {
-						const response = await fetch('/url?' + new URLSearchParams({url: fetchUrl}).toString())
-						const cleanedResponse = DOMPurify.sanitize(await response.text())
-						const doc = new DOMParser().parseFromString(cleanedResponse, 'text/html')
-						const parsedDoc = new Readability(doc).parse()
+					const response = await fetch('/url?' + new URLSearchParams({url: fetchUrl}).toString())
+					const cleanedResponse = DOMPurify.sanitize(await response.text())
+					const doc = new DOMParser().parseFromString(cleanedResponse, 'text/html')
+					const parsedDoc = new Readability(doc).parse()
 
-						console.log(doc, parsedDoc)
-						parsedDoc.content = parsedDoc.content.replaceAll(window.location.href, new URL(fetchUrl).origin + '/')
-						parsed = parsedDoc
-
-						if (parsed.title == "") {
-							parsed.title = document.querySelector("#opt-title").value;
-							if (parsed.title == "") { // still empty
-								alert("Could not infer a title from the webpage. Set the document's name in the textbox above.")
-							}
-						} else {
-							document.querySelector("#opt-title").value = parsed.title;
-						}
-						cachedUrl = fetchUrl;
-						console.log(parsed);
+					if (parsedDoc.title == "") {
+						alert("Could not infer a title from the webpage. Set the document's name in the textbox above.")
+					} else {
+						document.querySelector("#opt-title").value = parsedDoc.title;
 					}
+
+					const previewBox = document.querySelector("#preview-box")
+
+
+					previewBox.setHTMLUnsafe(parsedDoc.content)
+
+					// convert all pre tags to divs
+					let pretags = document.querySelectorAll("pre");
+					pretags.forEach(tag => {
+						let div = document.createElement("div")
+						div.className = "code"
+						tag.textContent.split('\n').forEach(line => {
+							let para = document.createElement("p")
+							const spacing = "&nbsp;".repeat(line.length - line.trimLeft().length);
+							para.innerHTML = spacing + line.trimLeft()
+							div.append(para)
+						})
+						tag.parentNode.insertBefore(div, tag);
+						tag.remove()
+					})
+
+					// images can have relative or absolute sources.
+					// relative sources can be relative to the origin or the origin + path of the original link.
+					// I encapsulate all of this below.
+					previewBox.querySelectorAll("img").forEach(img => {
+						const fetchUri = new URL(fetchUrl);
+						let imglink = img.src.replaceAll(window.location.href, '');
+						if (img.src.indexOf("http") != 0) {
+							img.src = fetchUri.origin + '/' + imglink;
+						}
+						img.onerror = () => { this.src = fetchUri.href + '/' + imglink }
+					})
+
+					const allowed_list = ['a', 'abbr', 'acronym', 'address', 'applet', 'b', 'bdo', 'big', 'blockquote', 'br', 'cite', 'code', 'del', 'dfn', 'div', 'dl', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'iframe', 'img', 'ins', 'kbd', 'map', 'noscript', 'ns:svg', 'object', 'ol', 'p', 'pre', 'q', 'samp', 'script', 'small', 'span', 'strong', 'sub', 'sup', 'table', 'tt', 'ul', 'var', 'article', 'section', 'li'];
+
+					/*
+					* Cleans up the DOM for conversion into an EPUB.
+					* EPUBs do not allow data attributes and anything not in the allowed list.
+					* technically, some tags do work even when epubcheck flags them, but it's on a case-by-case basis, for eg. section and article.
+					*/
+					function cleanForEPUB(node) {
+						node.childNodes.forEach(child => cleanForEPUB(child));
+
+						if (node.getAttributeNames) {
+							node.getAttributeNames().forEach(attr => {
+								if (attr.indexOf('data-') != -1) {
+									node.removeAttribute(attr);
+								}
+							})
+						}
+
+						if (node.tagName != undefined) {
+							if (allowed_list.indexOf(node.tagName.toLowerCase()) == -1) {
+								console.log("remove", node.tagName);
+								node.remove();
+							}
+						}
+					}
+					cleanForEPUB(previewBox);
+
+					// relative hrefs are adjusted to be relative to the original link
+					previewBox.querySelectorAll("a").forEach(tag => {
+						const fetchUri = new URL(fetchUrl);
+						tag.href = tag.href.replace(window.location.href, fetchUri.origin + '/')
+					})
 				}
 
 				emailbox.addEventListener('change', (event) => {
@@ -103,7 +155,6 @@
 
 				preview.addEventListener('click', async () => {
 					await parseUrl(getUrl());
-					document.querySelector("#preview-box").setHTMLUnsafe(parsed.content)
 				})
 
 				const sendMonitor = (handler) => {
@@ -116,7 +167,6 @@
 
 				send.addEventListener("click", sendMonitor(async () => {
 					await parseUrl(getUrl())
-					document.querySelector("#preview-box").setHTMLUnsafe(parsed.content)
 					const mailaddr = document.querySelector('#data-kindle-mail').value
 					const filename = document.querySelector("#opt-title").value;
 					if (filename == "") {
@@ -127,12 +177,26 @@
 						alert("Need a kindle mail address to send to.")
 						return
 					}
+
+					const previewBox = document.querySelector("#preview-box")
+					const previewClone = previewBox.cloneNode(true);
+
+					imgSources = previewClone.querySelectorAll("img").values().map(tag => tag.src).toArray()
+					previewClone.querySelectorAll("img").forEach(tag => {
+						const name = tag.src.split("/").at(-1);
+						tag.loading = "lazy";
+						tag.src = "images/" + name;
+					})
+
+					previewClone.querySelector("#readability-page-1").id = "preview-box";
+
 					const response = await fetch('/upload', {
 						method: "POST",
 						body: JSON.stringify({
 							kindle_email: document.querySelector('#data-kindle-mail').value,
 							filename: document.querySelector('#opt-title').value,
-							content: parsed.content,
+							content: previewClone.innerHTML,
+							img_sources: imgSources,
 						})
 					})
 					const responseText = await response.text()

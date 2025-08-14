@@ -3,9 +3,9 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
+		"deploy": "npx wrangler deploy",
+		"dev": "npx wrangler dev",
+		"start": "npx wrangler dev",
 		"test": "vitest"
 	},
 	"devDependencies": {
@@ -20,6 +20,8 @@
 		"dompurify": "^3.2.6",
 		"happy-dom": "^18.0.1",
 		"jsdom": "^23.0.1",
+		"jszip": "^3.10.1",
+		"mustache": "^4.2.0",
 		"whatwg-url": "^14.2.0"
 	}
 }

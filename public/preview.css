@@ -1,0 +1,50 @@
+#preview-box {
+	background-color: white;
+	color: black;
+	padding: 2rem;
+	font-family: serif;
+}
+
+blockquote {
+	margin: 0;
+	border-left: 4px solid gray;
+	padding-top: 1rem;
+	padding-bottom: 1rem;
+	padding-left: 2rem;
+}
+
+#preview-box a {
+	color: black;
+	font-weight: 700;
+	text-decoration: underline;
+}
+
+#preview-box img {
+	filter: grayscale(1);
+	max-width: 100%;
+}
+
+#preview-box h1 {
+	font-weight: 800;
+	font-size: 48px;
+}
+
+#preview-box hr {
+	border-top: solid black 2px;
+	margin: 2rem 0;
+	width: 100%;
+}
+
+.code {
+	font-family: monospace;
+	font-weight: bold;
+	color: black;
+	padding: 1rem;
+	background: lightgray;
+}
+
+.code > p {
+	font-size: 0.8rem;
+	color: black;
+}
+

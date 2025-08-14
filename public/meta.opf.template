@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="uuid_id" version="2.0">
+  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:calibre="http://calibre.kovidgoyal.net/2009/metadata" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:opf="http://www.idpf.org/2007/opf">
+    <dc:title>{{title}}</dc:title>
+    <dc:date>{{{date}}}</dc:date>
+    <dc:language>en</dc:language>
+	<dc:identifier id="uuid_id" opf:scheme="uuid">{{{uuid}}}</dc:identifier>
+  </metadata>
+  <manifest>
+    {{#images}}
+    <item href="images/{{{src}}}" id="{{{id}}}" media-type="{{{mime}}}"/>
+	{{/images}}
+	<item href="index.html" id="id0" media-type="application/xhtml+xml"/>
+	<item href="styles.css" id="styling" media-type="text/css"/>
+	<item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
+  </manifest>
+  <spine toc="ncx">
+  	<itemref idref="id0"/>
+  </spine>
+</package>
