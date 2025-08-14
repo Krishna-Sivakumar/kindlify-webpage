@@ -14,21 +14,24 @@
 		<div id="main">
 			<h1>Send Webpage to Kindle</h1>
 			<p>Take a url, convert it into a readable document, and send it to your kindle mail through your gmail.</p>
-			<ol>
-			<li>Audit the code here: (<a target="_blank" href="https://github.com/Krishna-Sivakumar/kindlify-url">src/index.js</a> for the email stuff)</li>
-			<li>Use the URL Preview below to check out what your document would look like on the kindle.</li>
-			<li>Make sure your gmail is added to your <a href="https://www.amazon.com/sendtokindle/email">kindle's approved list.</a></li>
-			</ol>
-			<button type="button" id="login" style="display:none">Login with Google</button>
-			<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
-				<input id="data-url" type="text" id="url" placeholder="url" />
-				<button id="preview" type="button"><img src="preview.svg">Preview</button>
+			<details>
+				<summary>Security and Usage Instructions</summary>
+				<ol>
+					<li>Audit the code here: (<a target="_blank" href="https://github.com/Krishna-Sivakumar/kindlify-webpage/blob/master/src/index.js">src/index.js</a> for the email stuff)</li>
+					<li>Use the URL Preview below to check out what your document would look like on the kindle.</li>
+					<li>Make sure your gmail is added to your <a href="https://www.amazon.com/sendtokindle/email">kindle's approved list.</a></li>
+				</ol>
+			</details>
+			<div class="form-container">
+				<div class="form">
+					<button type="button" id="login" style="display:none">Login with Google</button>
+					<input id="data-url" type="text" id="url" placeholder="url" />
+					<input id="data-kindle-mail" type="text" id="target-mail" placeholder="kindle email: name@kindle.com" />
+					<input type="text" id="opt-title" placeholder="Document Name" style="margin-top: 0.25rem;" />
+					<button id="preview" type="button"><img src="preview.svg">Preview</button>
+					<button id="send" type="button" style="margin: 0.25rem 0;"><img src="send.svg">Send to Kindle</button>
+				</div>
 			</div>
-			<div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
-				<input id="data-kindle-mail" type="text" id="target-mail" placeholder="kindle email: name@kindle.com" />
-			</div>
-			<input type="text" id="opt-title" placeholder="Document Name" style="margin-top: 0.25rem;" />
-			<button id="send" type="button" style="margin: 0.25rem 0;"><img src="send.svg">Send to Kindle</button>
 			<hr/>
 			<h2>Preview</h2>
 			<div id="preview-box">
@@ -154,6 +157,13 @@
 				})
 
 				preview.addEventListener('click', async () => {
+					const data_url = document.querySelector('#data-url');
+					data_url.setAttribute('data-error', '')
+					if (data_url.value.trim().length == 0) {
+						data_url.setAttribute('data-error', 'error')
+						return
+					}
+
 					await parseUrl(getUrl());
 				})
 
@@ -166,6 +176,19 @@
 				}
 
 				send.addEventListener("click", sendMonitor(async () => {
+					const data_url = document.querySelector('#data-url');
+					const data_mail = document.querySelector('#data-kindle-mail');
+					const data_title = document.querySelector('#opt-title');
+
+					[data_mail, data_title, data_url].forEach(node => node.setAttribute('data-error', ''));
+
+					const empties = [data_mail, data_title, data_url].filter(node => node.value.trim().length == 0)
+					if (empties.length != 0) {
+						empties.forEach(node => node.setAttribute('data-error', 'error'))
+						return;
+					}
+
+
 					await parseUrl(getUrl())
 					const mailaddr = document.querySelector('#data-kindle-mail').value
 					const filename = document.querySelector("#opt-title").value;
