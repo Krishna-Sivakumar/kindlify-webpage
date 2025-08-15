@@ -160,7 +160,7 @@
 					const data_url = document.querySelector('#data-url');
 					data_url.setAttribute('data-error', '')
 					if (data_url.value.trim().length == 0) {
-						data_url.setAttribute('data-error', 'error')
+						setTimeout(() => data_url.setAttribute('data-error', 'error'), 50);
 						return
 					}
 
@@ -186,7 +186,7 @@
 
 					const empties = [data_mail, data_title, data_url].filter(node => node.value.trim().length == 0)
 					if (empties.length != 0) {
-						empties.forEach(node => node.setAttribute('data-error', 'error'))
+						empties.forEach(node => setTimeout(() => node.setAttribute('data-error', 'error'), 50))
 						return;
 					}
 
